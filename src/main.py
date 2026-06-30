@@ -1,6 +1,7 @@
 import os
 import sys
 
+
 def print_help():
     print("""
 Использование:
@@ -11,57 +12,52 @@ def print_help():
     python main.py test_data .py
 """)
 
+
 def walk_directory(path, level=0, ext_filter=None):
     try:
-        items = os.listdir(path)
+        for root, dirs, files in os.walk(path):
+            current_level = root.replace(path, "").count(os.sep)
+
+            if root != path:
+                print("    " * current_level + f"[DIR] {os.path.basename(root)}")
+
+            for file in files:
+                if ext_filter and not file.endswith(ext_filter):
+                    continue
+
+                file_path = os.path.join(root, file)
+                try:
+                    size = os.path.getsize(file_path)
+                    print("    " * (current_level + 1) + f"[FILE] {file} ({size} bytes)")
+                except (PermissionError, FileNotFoundError):
+                    print("    " * (current_level + 1) + f"[FILE] {file} (НЕТ ДОСТУПА)")
+
     except PermissionError:
         print("Нет доступа к:", path)
         return
 
-    for item in items:
-        full_path = os.path.join(path, item)
-
-        if os.path.isdir(full_path):
-            print("    " * level + f"[DIR] {item}")
-            walk_directory(full_path, level + 1, ext_filter)
-
-        else:
-            if ext_filter and not item.endswith(ext_filter):
-                continue
-
-            size = os.path.getsize(full_path)
-            print("    " * level + f"[FILE] {item} ({size} bytes)")
 
 def collect_stats(path, ext_filter=None):
     file_count = 0
     dir_count = 0
     total_size = 0
 
-    def recursive_stats(current_path, level=0):
-        nonlocal file_count, dir_count, total_size
-        try:
-            items = os.listdir(current_path)
-        except PermissionError:
-            return
+    for root, dirs, files in os.walk(path):
+        dir_count += len(dirs)
 
-        for item in items:
-            full_path = os.path.join(current_path, item)
+        for file in files:
+            if ext_filter and not file.endswith(ext_filter):
+                continue
 
-            if os.path.isdir(full_path):
-                dir_count += 1
-                recursive_stats(full_path, level + 1)
-            else:
-                if ext_filter and not item.endswith(ext_filter):
-                    continue
-                try:
-                    size = os.path.getsize(full_path)
-                    file_count += 1
-                    total_size += size
-                except (PermissionError, FileNotFoundError):
-                    continue
+            file_path = os.path.join(root, file)
+            try:
+                file_count += 1
+                total_size += os.path.getsize(file_path)
+            except (PermissionError, FileNotFoundError):
+                continue
 
-    recursive_stats(path)
     return file_count, dir_count, total_size
+
 
 def main():
     if len(sys.argv) < 2:
@@ -89,6 +85,7 @@ def main():
     print(f"Файлов: {file_count}")
     print(f"Папок: {dir_count}")
     print(f"Общий размер: {total_size} байт")
+
 
 if __name__ == "__main__":
     main()
