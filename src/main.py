@@ -23,9 +23,7 @@ def walk_directory(path, level=0, ext_filter=None):
 
         if os.path.isdir(full_path):
             print("    " * level + f"[DIR] {item}")
-            # ⬇️⬇️⬇️ СТАРАЯ РЕКУРСИЯ (ручной обход) ⬇️⬇️⬇️
             walk_directory(full_path, level + 1, ext_filter)
-            # ⬆️⬆️⬆️ СТАРАЯ РЕКУРСИЯ (ручной обход) ⬆️⬆️⬆️
 
         else:
             if ext_filter and not item.endswith(ext_filter):
