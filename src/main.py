@@ -23,7 +23,9 @@ def walk_directory(path, level=0, ext_filter=None):
 
         if os.path.isdir(full_path):
             print("    " * level + f"[DIR] {item}")
+            # ⬇️⬇️⬇️ СТАРАЯ РЕКУРСИЯ (ручной обход) ⬇️⬇️⬇️
             walk_directory(full_path, level + 1, ext_filter)
+            # ⬆️⬆️⬆️ СТАРАЯ РЕКУРСИЯ (ручной обход) ⬆️⬆️⬆️
 
         else:
             if ext_filter and not item.endswith(ext_filter):
@@ -37,17 +39,30 @@ def collect_stats(path, ext_filter=None):
     dir_count = 0
     total_size = 0
 
-    for root, dirs, files in os.walk(path):
-        dir_count += len(dirs)
+    def recursive_stats(current_path, level=0):
+        nonlocal file_count, dir_count, total_size
+        try:
+            items = os.listdir(current_path)
+        except PermissionError:
+            return
 
-        for file in files:
-            if ext_filter and not file.endswith(ext_filter):
-                continue
+        for item in items:
+            full_path = os.path.join(current_path, item)
 
-            file_path = os.path.join(root, file)
-            file_count += 1
-            total_size += os.path.getsize(file_path)
+            if os.path.isdir(full_path):
+                dir_count += 1
+                recursive_stats(full_path, level + 1)
+            else:
+                if ext_filter and not item.endswith(ext_filter):
+                    continue
+                try:
+                    size = os.path.getsize(full_path)
+                    file_count += 1
+                    total_size += size
+                except (PermissionError, FileNotFoundError):
+                    continue
 
+    recursive_stats(path)
     return file_count, dir_count, total_size
 
 def main():
