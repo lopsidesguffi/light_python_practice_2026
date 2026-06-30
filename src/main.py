@@ -37,30 +37,17 @@ def collect_stats(path, ext_filter=None):
     dir_count = 0
     total_size = 0
 
-    def recursive_stats(current_path, level=0):
-        nonlocal file_count, dir_count, total_size
-        try:
-            items = os.listdir(current_path)
-        except PermissionError:
-            return
+    for root, dirs, files in os.walk(path):
+        dir_count += len(dirs)
 
-        for item in items:
-            full_path = os.path.join(current_path, item)
+        for file in files:
+            if ext_filter and not file.endswith(ext_filter):
+                continue
 
-            if os.path.isdir(full_path):
-                dir_count += 1
-                recursive_stats(full_path, level + 1)
-            else:
-                if ext_filter and not item.endswith(ext_filter):
-                    continue
-                try:
-                    size = os.path.getsize(full_path)
-                    file_count += 1
-                    total_size += size
-                except (PermissionError, FileNotFoundError):
-                    continue
+            file_path = os.path.join(root, file)
+            file_count += 1
+            total_size += os.path.getsize(file_path)
 
-    recursive_stats(path)
     return file_count, dir_count, total_size
 
 def main():
